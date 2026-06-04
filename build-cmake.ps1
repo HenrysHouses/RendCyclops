@@ -1,3 +1,2 @@
-cd build
+Set-Location "$Script:PSScriptRoot/build"
 cmake -S .. -B .
-cmake --build . --config Release -- /m
