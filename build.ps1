@@ -1,2 +1,2 @@
 Set-Location "$Script:PSScriptRoot/build"
-cmake --build . --config Release -- /m
+cmake --build . --config Release --parallel
