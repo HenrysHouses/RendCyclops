@@ -8,3 +8,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_subdirectory(vendor)
 add_subdirectory(src)
+
+add_subdirectory(vendor/glad/cmake glad_cmake)
+glad_add_library(glad_gl STATIC API gl:core=3.3)
+target_link_libraries(RendCyclops PRIVATE glad_gl ${SDL3_LIBRARIES})
