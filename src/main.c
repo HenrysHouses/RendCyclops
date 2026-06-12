@@ -3,6 +3,7 @@
 // #include "SDL3/SDL.h"
 // #include "SDL3/SDL_rect.h"
 // #include "SDL3/SDL_surface.h"
+#include "SDL3/SDL_events.h"
 #include "SDL3/SDL_log.h"
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_stdinc.h"
@@ -20,12 +21,9 @@
 #include "SDL3/SDL_main.h"
 
 #define CLAY_IMPLEMENTATION
+#include "viewport/View.h"
 #include <clay.h>
 #include <renderers/SDL3/clay_renderer_SDL3.c>
-
-static const Clay_Color COLOR_ORANGE = (Clay_Color){ 225, 138, 50, 255 };
-static const Clay_Color COLOR_BLUE = (Clay_Color){ 111, 173, 162, 255 };
-static const Clay_Color COLOR_LIGHT = (Clay_Color){ 224, 215, 210, 255 };
 
 typedef struct app_state
 {
@@ -36,15 +34,10 @@ typedef struct app_state
     Clay_SDL3RendererData rendererData;
 } AppState;
 
+// const int WINDOW_WIDTH = 1920 / 2;
+// const int WINDOW_HEIGHT = 1080 / 2;
 // int *gFrameBuffer;
-// Uint64 *gFrameLimit;
 // int *gTempBuffer;
-
-AppState *gAppState;
-SDL_Texture *gSDLTexture;
-const int WINDOW_WIDTH = 1920 / 2;
-const int WINDOW_HEIGHT = 1080 / 2;
-
 // void init()
 // {
 // gTempBuffer = malloc(WINDOW_WIDTH * WINDOW_HEIGHT * sizeof(int));
@@ -57,6 +50,22 @@ const int WINDOW_HEIGHT = 1080 / 2;
 //     gFrameBuffer[i] = 0xff000000;
 // }
 
+AppState *gAppState;
+SDL_Texture *gSDLTexture;
+
+static bool resizingEventWatcher(void *data, SDL_Event *event)
+{
+    if (event->type == SDL_EVENT_WINDOW_RESIZED) {
+        SDL_Window *win = SDL_GetWindowFromID(event->window.windowID);
+        if (win == (SDL_Window *)data) {
+            // int *w, *h;
+            // SDL_GetWindowSize(win, w, h);
+            // framebuffer_size_callback(win, *w, *h);
+            printf("resizing.....\n");
+        }
+    }
+    return 0;
+}
 
 static inline Clay_Dimensions SDL_MeasureText(Clay_StringSlice text, Clay_TextElementConfig *config, void *userData)
 {
@@ -98,7 +107,7 @@ Clay_RenderCommandArray ClayImageSample_CreateLayout()
 
     CLAY(CLAY_ID("OuterContainer"),
          { .layout = {
-               .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) },
+               .sizing = layoutExpand,
                .padding = CLAY_PADDING_ALL(16),
                .childGap = 16 } })
     // .backgroundColor = { 250, 250, 255, 255 } })
@@ -143,11 +152,7 @@ Clay_RenderCommandArray ClayImageSample_CreateLayout()
             }
         }
 
-        CLAY(CLAY_ID("MainContent"),
-             {
-                 .layout = {
-                     .sizing = { .width = CLAY_SIZING_GROW(0), .height = CLAY_SIZING_GROW(0) } },
-             }){
+        CLAY(CLAY_ID("MainContent"), { .layout = { .sizing = layoutExpand }, }){
             // this is the right empty container
         };
     }
@@ -234,7 +239,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
     Clay_Initialize(clayMemory, (Clay_Dimensions){ (float)width, (float)height }, (Clay_ErrorHandler){ HandleClayErrors });
     Clay_SetMeasureTextFunction(SDL_MeasureText, state->rendererData.fonts);
 
+    // glViewport(316, 0, 100, 300);
+    glViewport(0, 0, 640, 480);
     // state->demoData = ClayVideoDemo_Initialize();
+    SDL_AddEventWatch(resizingEventWatcher, state->window);
 
     state->rendererData.renderer = state->renderer;
     *appstate = state;
@@ -255,12 +263,12 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 
     Clay_RenderCommandArray render_commands = (ClayImageSample_CreateLayout());
 
-    SDL_SetRenderDrawColor(state->rendererData.renderer, 0, 0, 0, 255);
-    SDL_RenderClear(state->rendererData.renderer);
+    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
+    SDL_RenderClear(state->renderer);
 
     SDL_Clay_RenderClayCommands(&state->rendererData, &render_commands);
 
-    SDL_RenderPresent(state->rendererData.renderer);
+    SDL_RenderPresent(state->renderer);
 
     return SDL_APP_CONTINUE;
 }
