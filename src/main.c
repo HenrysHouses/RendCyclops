@@ -21,6 +21,7 @@
 #include "SDL3/SDL_main.h"
 
 #define CLAY_IMPLEMENTATION
+#include "RenderPipeline/GLRenderPipeline.h"
 #include "viewport/View.h"
 #include <clay.h>
 #include <renderers/SDL3/clay_renderer_SDL3.c>
@@ -52,15 +53,24 @@ typedef struct app_state
 
 AppState *gAppState;
 SDL_Texture *gSDLTexture;
+GLuint VertexBufferObject;
+GLuint VertexArrayObject;
+GLuint ShaderProgram;
+
+float vertices[] = {
+    -0.5f, -0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    0.0f, 0.5f, 0.0f
+};
 
 static bool resizingEventWatcher(void *data, SDL_Event *event)
 {
     if (event->type == SDL_EVENT_WINDOW_RESIZED) {
         SDL_Window *win = SDL_GetWindowFromID(event->window.windowID);
         if (win == (SDL_Window *)data) {
-            // int *w, *h;
-            // SDL_GetWindowSize(win, w, h);
-            // framebuffer_size_callback(win, *w, *h);
+            int width, height;
+            SDL_GetWindowSize(gAppState->window, &width, &height);
+            framebuffer_size_callback(gAppState->window, width, height);
             printf("resizing.....\n");
         }
     }
@@ -152,7 +162,10 @@ Clay_RenderCommandArray ClayImageSample_CreateLayout()
             }
         }
 
-        CLAY(CLAY_ID("MainContent"), { .layout = { .sizing = layoutExpand }, }){
+        CLAY(CLAY_ID("MainContent"),
+             {
+                 .layout = { .sizing = layoutExpand },
+             }){
             // this is the right empty container
         };
     }
@@ -164,6 +177,8 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 {
     (void)argc;
     (void)argv;
+    int width = 640;
+    int height = 480;
 
     if (!TTF_Init()) {
         return SDL_APP_FAILURE;
@@ -182,7 +197,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
 
     if (!SDL_CreateWindowAndRenderer(
             "Clay Demo",
-            640, 480,
+            width, height,
             SDL_WINDOW_OPENGL | SDL_WINDOW_BORDERLESS,
             &state->window, &state->renderer)) {
         SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Failed to create window and renderer: %s", SDL_GetError());
@@ -202,6 +217,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         printf("Failed to initialize OpenGL context\n");
         return -1;
     }
+
+    glViewport(0, 0, width, height);
+
+    CreateVertexArray(&VertexArrayObject);
+    CreateVertexBuffer(vertices, &VertexBufferObject);
+    CompileShaderProgram(vertexShaderSource, fragmentShaderSource, &ShaderProgram);
 
     printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
@@ -234,13 +255,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         .capacity = totalMemorySize
     };
 
-    int width, height;
-    SDL_GetWindowSize(state->window, &width, &height);
     Clay_Initialize(clayMemory, (Clay_Dimensions){ (float)width, (float)height }, (Clay_ErrorHandler){ HandleClayErrors });
     Clay_SetMeasureTextFunction(SDL_MeasureText, state->rendererData.fonts);
 
     // glViewport(316, 0, 100, 300);
-    glViewport(0, 0, 640, 480);
     // state->demoData = ClayVideoDemo_Initialize();
     SDL_AddEventWatch(resizingEventWatcher, state->window);
 
@@ -253,6 +271,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 {
     AppState *state = appstate;
 
+    RenderMesh(&ShaderProgram, &VertexBufferObject, &VertexArrayObject);
     float mouse_x, mouse_y;
 
     Uint32 buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
@@ -295,10 +314,10 @@ bool Update(Uint64 time)
         }
     }
 
-    SDL_AppIterate(gAppState);
-
+    // # NOTE there is a clear in SDL_AppIterate but idk what is required here and which works with what yet.
     glClearColor(0.7f, 0.9f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
+    SDL_AppIterate(gAppState);
 
     SDL_GL_SwapWindow(gAppState->window);
     SDL_Delay(1);
