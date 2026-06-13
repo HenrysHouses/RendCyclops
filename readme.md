@@ -6,6 +6,9 @@ help for setting up the project
 tutorial followed / read
 - https://solhsa.com/gp2/ch01.html
 
+Everything OpenGL
+- https://learnopengl.com/Introduction
+
 # Resources used
 
 Windows SDL Wiki
