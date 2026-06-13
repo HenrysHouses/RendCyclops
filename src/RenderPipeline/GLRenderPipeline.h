@@ -3,10 +3,8 @@
 #include <stdio.h>
 
 // WARN these are here temporarily. idk how to store and handle these yet
-unsigned int *vertexProgram;
-unsigned int *fragmentProgram;
-
 const GLchar *vertexShaderSource =
+    "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "void main()\n"
     "{\n"
@@ -14,6 +12,7 @@ const GLchar *vertexShaderSource =
     "}\0";
 
 const GLchar *fragmentShaderSource =
+    "#version 330 core\n"
     "out vec4 FragColor;\n"
     "void main()\n"
     "{\n"
@@ -77,34 +76,35 @@ int CreateShaderProgram(GLuint *vertexShader, GLuint *fragmentShader, GLuint *sh
 
         return success;
     }
-
-    glDeleteShader(*vertexShader);
-    glDeleteShader(*fragmentShader);
-
     return success;
 }
 
-int CompileShaderProgram(const GLchar *vertexProgramSource, const GLchar *fragmentProgramSource, GLuint* shaderProgram)
+int CompileShaderProgram(const GLchar *vertexProgramSource, const GLchar *fragmentProgramSource, GLuint *shaderProgram)
 {
     int success;
-    success = CompileShaderFromSource(vertexProgramSource, GL_VERTEX_SHADER,vertexProgram);
+    GLuint vertexProgram;
+    success = CompileShaderFromSource(vertexProgramSource, GL_VERTEX_SHADER, &vertexProgram);
     if (!success) {
         return success;
     }
 
-    success = CompileShaderFromSource(fragmentProgramSource, GL_FRAGMENT_SHADER, fragmentProgram);
+    GLuint fragmentProgram;
+    success = CompileShaderFromSource(fragmentProgramSource, GL_FRAGMENT_SHADER, &fragmentProgram);
     if (!success) {
         return success;
     }
 
-    // return 0;
-    return CreateShaderProgram(vertexProgram, fragmentProgram, shaderProgram);
+    success = CreateShaderProgram(&vertexProgram, &fragmentProgram, shaderProgram);
+
+    glDeleteShader(vertexProgram);
+    glDeleteShader(fragmentProgram);
+    return success;
 }
 
-void RenderMesh(GLuint *shaderProgram, GLuint *vertexBuffer, GLuint *vertexArray)
+void RenderMesh(GLuint *shaderProgram, GLuint *vertexArray)
 {
     glUseProgram(*shaderProgram);
     glBindVertexArray(*vertexArray);
     glDrawArrays(GL_TRIANGLES, 0, 3);
-    printf("draw the mesh now\n");
+    // printf("draw the mesh now\n");
 }

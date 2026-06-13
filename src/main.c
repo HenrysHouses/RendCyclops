@@ -271,23 +271,26 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 {
     AppState *state = appstate;
 
-    RenderMesh(&ShaderProgram, &VertexBufferObject, &VertexArrayObject);
-    float mouse_x, mouse_y;
+    // float mouse_x, mouse_y;
 
-    Uint32 buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
+    // Uint32 buttons = SDL_GetMouseState(&mouse_x, &mouse_y);
 
-    Clay_SetPointerState(
-        (Clay_Vector2){ .x = mouse_x, .y = mouse_y },
-        buttons & SDL_BUTTON_LMASK);
+    // Clay_SetPointerState(
+    //     (Clay_Vector2){ .x = mouse_x, .y = mouse_y },
+    //     buttons & SDL_BUTTON_LMASK);
+    //
+    // Clay_RenderCommandArray render_commands = (ClayImageSample_CreateLayout());
 
-    Clay_RenderCommandArray render_commands = (ClayImageSample_CreateLayout());
+    // SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
+    // SDL_RenderClear(state->renderer);
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
 
-    SDL_SetRenderDrawColor(state->renderer, 0, 0, 0, 255);
-    SDL_RenderClear(state->renderer);
+    RenderMesh(&ShaderProgram, &VertexArrayObject);
+    SDL_GL_SwapWindow(state->window);
 
-    SDL_Clay_RenderClayCommands(&state->rendererData, &render_commands);
-
-    SDL_RenderPresent(state->renderer);
+    // SDL_Clay_RenderClayCommands(&state->rendererData, &render_commands);
+    // SDL_RenderPresent(state->renderer);
 
     return SDL_APP_CONTINUE;
 }
@@ -314,9 +317,6 @@ bool Update(Uint64 time)
         }
     }
 
-    // # NOTE there is a clear in SDL_AppIterate but idk what is required here and which works with what yet.
-    glClearColor(0.7f, 0.9f, 0.1f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
     SDL_AppIterate(gAppState);
 
     SDL_GL_SwapWindow(gAppState->window);
